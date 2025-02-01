@@ -202,10 +202,10 @@ def main():
     
     spinedec_only = args.s
     ext_dir = 'output'
-    if spinedec_only:
-        pattern = os.path.join(ext_dir, "*config*.json")
+    if not spinedec_only:
+        pattern = os.path.join(os.getcwd(), "*config*.json")
         config_file = glob.glob(pattern)
-        with open(config_file, 'r', encoding='utf-8') as f:
+        with open(config_file[0], 'r', encoding='utf-8') as f:
             data = f.read()
         jsondata = orjson.loads(data)
         uuids = jsondata['uuids']
