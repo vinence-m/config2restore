@@ -60,16 +60,23 @@ def copy_file(src_base, verD, decuuids, Paths, ExT_dir):
                 if uuid in decuuids:
                     path_idx = decuuids.index(uuid)
                     output_dir = Paths.get(path_idx)
+                    if spinedec_only and (spine_sig not in output_dir):
+                        continue
                     success_match(src_file, output_dir, file)
                 else:
+                    # uuid是文件夹时
                     foldername = os.path.basename(root)
                     fosplit = foldername.split('.')
                     fouuid = fosplit[0]
                     if fouuid in decuuids:
                         path_idx = decuuids.index(fouuid)
                         output_dir = Paths.get(path_idx)
+                        if spinedec_only and (spine_sig not in output_dir):
+                            continue
                         success_match(src_file, output_dir, file)
                     else:
+                        if spinedec_only:
+                            continue
                         failure_dir = f'failure\\{root}'
                         os.makedirs(failure_dir, exist_ok=True)
                         dst_file = os.path.join(failure_dir, file)
@@ -77,6 +84,7 @@ def copy_file(src_base, verD, decuuids, Paths, ExT_dir):
                         shutil.copy(src_file, failure_dir)
             except:
                 try:
+                    # uuid定位不到path时，通过ver辅助定位path
                     if uuid in decuuids:
                         uid_idx = decuuids.index(uuid)
                         vername = splitname[1]
@@ -84,6 +92,8 @@ def copy_file(src_base, verD, decuuids, Paths, ExT_dir):
                             vercheck.append(vername)
                             basever_idx = verD[src_base][vername-1]
                             output_dir = Paths.get(basever_idx)
+                            if spinedec_only and (spine_sig not in output_dir):
+                                continue
                             success_match(src_file, output_dir, file)
                             continue
                         else:
@@ -99,7 +109,8 @@ def overrangge_file(overlist, EXT_dir):
     unknown_list = []
     for row in overlist:
         over_file = os.path.join(row[0], row[1])
-        print(over_file)
+        if spinedec_only and (spine_sig not in over_file):
+            continue
         try:
             with open(over_file, 'r', encoding='utf-8') as f:
                 tdata = f.read()
@@ -110,6 +121,7 @@ def overrangge_file(overlist, EXT_dir):
                 for file in files:
                     splitname = file.split('.')
                     uuid = splitname[0]
+                    # json中的uuid链接定位path
                     if dec_link_uuid == uuid:
                         link_dir = os.path.join(root, row[1])
                         print(f"复制链接文件: {over_file} -> {link_dir}")
@@ -119,6 +131,8 @@ def overrangge_file(overlist, EXT_dir):
                     continue
                 break
             else:
+                if spinedec_only:
+                    continue
                 overidx_dir = f'failure\\{row[0]}'
                 os.makedirs(overidx_dir, exist_ok=True)
                 dst_file = os.path.join(overidx_dir, row[1])
@@ -126,6 +140,8 @@ def overrangge_file(overlist, EXT_dir):
                 print(f"超索引文件: {over_file} -> {dst_file}")
                 shutil.copy(over_file, dst_file)
         except Exception:
+            if spinedec_only:
+                continue
             overlink_dir = f'failure\\{row[0]}'
             os.makedirs(overlink_dir, exist_ok=True)
             dst_file = os.path.join(overlink_dir, row[1])
@@ -196,36 +212,43 @@ def spine_json(out_dir):
             del dirs[:]
 
 def main():
+    global spinedec_only
+    global spine_sig
+    
     parser = argparse.ArgumentParser(description="Cocos2d Restore and decrypt spine.")
-    parser.add_argument("-s", action='store_true', help="Optional: only decrypt spine or not")
+    parser.add_argument("-s", action='store_true', help="Optional: Only decrypt spine or not")
+    parser.add_argument("-n", help="Optional: Specify the spine folder name or other")
     args = parser.parse_args()
     
+    spine_sig = 'Spine'
     spinedec_only = args.s
+    if args.s:
+        spine_sig = args.n
     ext_dir = 'output'
-    if not spinedec_only:
-        pattern = os.path.join(os.getcwd(), "*config*.json")
-        config_file = glob.glob(pattern)
-        with open(config_file[0], 'r', encoding='utf-8') as f:
-            data = f.read()
-        jsondata = orjson.loads(data)
-        uuids = jsondata['uuids']
-        dec_uuids = [decode_uuid(uuid) for uuid in uuids]
-        paths = get_path(jsondata['paths'], ext_dir)
-        base_name = [jsondata['importBase'], jsondata['nativeBase']]
-        basever_dl = jsondata['versions']
-        catch_overset = set()
-        for base in base_name:
-            result = copy_file(base, basever_dl, dec_uuids, paths, ext_dir)
-            catch_overset.update(result)
-        catch_overlist = [list(i) for i in catch_overset]
-        ukl = overrangge_file(catch_overlist, ext_dir)
-        if ukl:
-            with open('unknowfile.txt','w',encoding='utf-8') as f:
-                for item in ukl:
-                    f.write(f"{item}\n")
-        spine_json(ext_dir)
-    else:
-        spine_json(ext_dir)
+    if spinedec_only:
+        print('正在查找Spine文件...')
+    
+    pattern = os.path.join(os.getcwd(), "*config*.json")
+    config_file = glob.glob(pattern)
+    with open(config_file[0], 'r', encoding='utf-8') as f:
+        data = f.read()
+    jsondata = orjson.loads(data)
+    uuids = jsondata['uuids']
+    dec_uuids = [decode_uuid(uuid) for uuid in uuids]
+    paths = get_path(jsondata['paths'], ext_dir)
+    base_name = [jsondata['importBase'], jsondata['nativeBase']]
+    basever_dl = jsondata['versions']
+    catch_overset = set()
+    for base in base_name:
+        result = copy_file(base, basever_dl, dec_uuids, paths, ext_dir)
+        catch_overset.update(result)
+    catch_overlist = [list(i) for i in catch_overset]
+    ukl = overrangge_file(catch_overlist, ext_dir)
+    if ukl:
+        with open('unknowfile.txt','w',encoding='utf-8') as f:
+            for item in ukl:
+                f.write(f"{item}\n")
+    spine_json(ext_dir)
     print('finish')
 
 
