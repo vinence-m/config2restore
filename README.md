@@ -18,7 +18,11 @@ Only decrypt spine files with default option
 ```
 python Cocos2d_restore.py -s
 ```
-If you want to decrypt specific files or folder, you can use option `-n`
+If you want to decrypt specific files or folder, you can use option `-s` with `-n`
 ```
-python Cocos2d_restore.py -n examplefolder
+python Cocos2d_restore.py -s -n keywordfile
+```
+or
+```
+python Cocos2d_restore.py -s -n /keywordfoldername/
 ```
