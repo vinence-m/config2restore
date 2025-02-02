@@ -226,7 +226,7 @@ def main():
         spine_sig = args.n
     ext_dir = 'output'
     if spinedec_only:
-        print('正在查找Spine文件...')
+        print(f'正在查找{spine_sig}目录或文件...')
     
     pattern = os.path.join(os.getcwd(), "*config*.json")
     config_file = glob.glob(pattern)
