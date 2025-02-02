@@ -220,10 +220,8 @@ def main():
     parser.add_argument("-n", help="Optional: Specify the spine folder name or other")
     args = parser.parse_args()
     
-    spine_sig = 'Spine'
     spinedec_only = args.s
-    if args.s:
-        spine_sig = args.n
+    spine_sig = args.n if args.n is not None else 'Spine'
     ext_dir = 'output'
     if spinedec_only:
         print(f'正在查找{spine_sig}目录或文件...')
