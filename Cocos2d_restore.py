@@ -60,7 +60,9 @@ def copy_file(src_base, verD, decuuids, Paths, ExT_dir):
                 if uuid in decuuids:
                     path_idx = decuuids.index(uuid)
                     output_dir = Paths.get(path_idx)
-                    if spinedec_only and (spine_sig not in output_dir):
+                    if (spinedec_only and (spine_sig not in output_dir)):
+                        continue
+                    elif not spinedec_only and (spine_sig != 'Spine') and (spine_sig not in output_dir):
                         continue
                     success_match(src_file, output_dir, file)
                 else:
@@ -72,6 +74,8 @@ def copy_file(src_base, verD, decuuids, Paths, ExT_dir):
                         path_idx = decuuids.index(fouuid)
                         output_dir = Paths.get(path_idx)
                         if spinedec_only and (spine_sig not in output_dir):
+                            continue
+                        elif not spinedec_only and (spine_sig != 'Spine') and (spine_sig not in output_dir):
                             continue
                         success_match(src_file, output_dir, file)
                     else:
@@ -94,6 +98,8 @@ def copy_file(src_base, verD, decuuids, Paths, ExT_dir):
                             output_dir = Paths.get(basever_idx)
                             if spinedec_only and (spine_sig not in output_dir):
                                 continue
+                            elif not spinedec_only and (spine_sig != 'Spine') and (spine_sig not in output_dir):
+                                continue
                             success_match(src_file, output_dir, file)
                             continue
                         else:
@@ -110,6 +116,8 @@ def overrangge_file(overlist, EXT_dir):
     for row in overlist:
         over_file = os.path.join(row[0], row[1])
         if spinedec_only and (spine_sig not in over_file):
+            continue
+        elif not spinedec_only and (spine_sig != 'Spine') and (spine_sig not in over_file):
             continue
         try:
             with open(over_file, 'r', encoding='utf-8') as f:
@@ -217,13 +225,15 @@ def main():
     
     parser = argparse.ArgumentParser(description="Cocos2d Restore and decrypt spine.")
     parser.add_argument("-s", action='store_true', help="Optional: Only decrypt spine or not")
-    parser.add_argument("-n", help="Optional: Specify the spine folder name or other")
+    parser.add_argument("-n", help="Optional: Specify the spine foldername or other")
     args = parser.parse_args()
-    
+
     spinedec_only = args.s
     spine_sig = args.n if args.n is not None else 'Spine'
     ext_dir = 'output'
     if spinedec_only:
+        print(f'正在查找{spine_sig}目录或文件...')
+    elif not spinedec_only and args.n is not None:
         print(f'正在查找{spine_sig}目录或文件...')
     
     pattern = os.path.join(os.getcwd(), "*config*.json")
